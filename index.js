@@ -42,11 +42,11 @@ async function getUsers(db) {
 getUsers(db).then(console.log)
 
 const hostname = '127.0.0.1';
-const port = 3000;
+const port = process.env.port || 3000;
 
 const app = express();
 
-app.listen(3000, () => console.log('GainzUnited-Web listening on port 3000.'));
+app.listen(process.env.port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'home.html'));
