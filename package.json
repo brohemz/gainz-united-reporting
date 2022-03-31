@@ -1,0 +1,12 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "website and api",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://git.heroku.com/gainz-united-web.git"
+  },
+  "author": "",
+  "license": "ISC"
+}
