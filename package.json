@@ -1,12 +1,22 @@
 {
-  "name": "app",
+  "name": "gainzunited-web",
   "version": "1.0.0",
   "description": "website and api",
   "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://git.heroku.com/gainz-united-web.git"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.3",
+    "firebase": "^9.6.10",
+    "nodemon": "^2.0.15",
+    "npx": "^10.2.2"
+  }
 }
