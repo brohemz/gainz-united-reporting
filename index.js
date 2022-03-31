@@ -45,6 +45,7 @@ const hostname = '127.0.0.1';
 const port = process.env.PORT || 3000;
 
 const app = express();
+app.set("port", PORT);
 
 app.listen(process.env.port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
 
