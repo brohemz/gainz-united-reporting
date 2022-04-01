@@ -45,10 +45,21 @@ const hostname = '127.0.0.1';
 const port = process.env.PORT || 3000;
 
 const app = express();
-app.set("port", PORT);
+app.set("port", port);
+app.set('view engine', 'ejs')
 
-app.listen(process.env.port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
+app.listen(port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'home.html'));
+
+  getUsers(db).then( (comments) => {
+    res.render('home', {
+      data: "Hello world",
+      reportedComments: comments,
+      layout: './layouts/home'})
+  })
 })
+
+// app.get('/', (req, res) => {
+//   "Hello"
+// })
