@@ -1,7 +1,15 @@
-<ul>
-    <% reportedComments.forEach(function(comment){ %>
-      <li> <%= comment.bio %> </li>
-    <% }); %>
-</ul>
-
+<table class="table">
+  <tr>
+    <th>Comment Identifier</th>
+    <th>Description</th>
+    <th>Owner</th>
+    <th>Owner Identifier</th>
+  </tr>
+  <% reportedComments.forEach(function(comment){ %>
+    <td><%= comment.uid %> </td>
+    <td> <%= comment.description %> </td>
+    <td> <%= `${comment.owner_first_name} ${comment.owner_last_name}` %> </td>
+    <td> <%= comment.owner_uid %> </li>
+  <% }); %>
+</table>
     

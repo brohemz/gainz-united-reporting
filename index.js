@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, doc } from "firebase/firestore";
 import http from 'http';
 import { fileURLToPath } from "url";
 import express from 'express';
@@ -35,11 +35,21 @@ const db = getFirestore(firebase);
 async function getUsers(db) {
     const userCol = collection(db, 'users');
     const userSnapshot = await getDocs(userCol);
-    const userList = userSnapshot.docs.map(doc => doc.data());
+    const userList = userSnapshot.docs.map(document => document.data());
     return userList;
 }
 
-getUsers(db).then(console.log)
+async function getReportedPosts(db) {
+    const reportedPostsCol = collection(db, 'reportedPosts')
+    const snapshot = await getDocs(reportedPostsCol);
+    const postList = snapshot.docs.map(document => document.data());
+    const numberOfReports = new Set()
+    postList.forEach(post => numberOfReports[post.uid] = post.user_list.length);
+
+    const postDataList = postList.map(document => (getDoc(doc(db, `posts`, document.uid))))
+
+    return [(await Promise.all(postDataList)).map(document => document.data()), numberOfReports];
+}
 
 const hostname = '127.0.0.1';
 const port = process.env.PORT || 3000;
@@ -52,10 +62,13 @@ app.listen(port, () => console.log(`GainzUnited-Web listening on port ${port}.`)
 
 app.get('/', (req, res) => {
 
-  getUsers(db).then( (comments) => {
-    res.render('home', {
+  getReportedPosts(db).then( (posts) => {
+    console.log(posts)
+    return res.render('home', {
       data: "Hello world",
-      reportedComments: comments,
+      numberOfReports: posts[1],
+      reportedPosts: posts[0],
+      reportedComments: posts[0],
       layout: './layouts/home'})
   })
 })
