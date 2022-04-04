@@ -46,9 +46,13 @@ async function getReportedPosts(db) {
     const numberOfReports = new Set()
     postList.forEach(post => numberOfReports[post.uid] = post.user_list.length);
 
+    const reasonList = new Set()
+    postList.forEach(post => reasonList[post.uid] = post.reason_list[0])
+
     const postDataList = postList.map(document => (getDoc(doc(db, `posts`, document.uid))))
 
-    return [(await Promise.all(postDataList)).map(document => document.data()), numberOfReports];
+
+    return [(await Promise.all(postDataList)).map(document => document.data()), numberOfReports, reasonList];
 }
 
 const hostname = '127.0.0.1';
@@ -67,6 +71,7 @@ app.get('/', (req, res) => {
     return res.render('home', {
       data: "Hello world",
       numberOfReports: posts[1],
+      reasonList: posts[2],
       reportedPosts: posts[0],
       reportedComments: posts[0],
       layout: './layouts/home'})
