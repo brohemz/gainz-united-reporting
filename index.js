@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, getDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, doc, deleteDoc } from "firebase/firestore";
 import http from 'http';
 import { fileURLToPath } from "url";
 import express from 'express';
@@ -55,12 +55,19 @@ async function getReportedPosts(db) {
     return [(await Promise.all(postDataList)).map(document => document.data()), numberOfReports, reasonList];
 }
 
+async function ignoreReportedPost(db, postUID) {
+  const reportedPostRef = collection(db, `reportedPosts/${postUID}`)
+  await deleteDoc(reportedPostRef);
+}
+
 const hostname = '127.0.0.1';
 const port = process.env.PORT || 3000;
 
 const app = express();
 app.set("port", port);
 app.set('view engine', 'ejs')
+
+app.use(express.static(path.join(__dirname, 'client')));
 
 app.listen(port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
 
@@ -77,6 +84,11 @@ app.get('/', (req, res) => {
       layout: './layouts/home'})
   })
 })
+
+app.post('/ReportedPosts/Ignore/:postUID', (req, res) => {
+  console.log(`Ignoring post: ${req.params["postUID"]}`)
+  ignoreReportedPost(db, req.params["postUID"])
+});
 
 // app.get('/', (req, res) => {
 //   "Hello"
