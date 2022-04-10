@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, getDocs, getDoc, doc, deleteDoc } from "firebase/firestore";
+import { getFirestore, collection, getDocs, getDoc, doc, deleteDoc, updateDoc, query, where } from "firebase/firestore";
 import http from 'http';
 import { fileURLToPath } from "url";
 import express from 'express';
@@ -51,13 +51,85 @@ async function getReportedPosts(db) {
 
     const postDataList = postList.map(document => (getDoc(doc(db, `posts`, document.uid))))
 
-
     return [(await Promise.all(postDataList)).map(document => document.data()), numberOfReports, reasonList];
 }
 
+async function getReportedComments(db) {
+  const reportedCommentsCol = collection(db, 'reportedComments')
+  const snapshot = await getDocs(reportedCommentsCol);
+  let commentList = snapshot.docs.map(document => document.data());
+
+  const numberOfReports = new Set()
+  commentList.forEach(comment => numberOfReports[comment.uid] = comment.user_list.length);
+
+  const reasonList = new Set()
+  commentList.forEach(comment => reasonList[comment.uid] = comment.reason_list[0])
+
+  let filterList = []
+
+  const commentQuery = commentList.map(comment => {
+    filterList.push(comment.uid);
+    return query(collection(db, 'comments'), where("index_map", "array-contains", comment.uid)) })
+    .map(commentRef => getDocs(commentRef))
+
+  let commentFinally = await Promise.all(commentQuery)
+  commentFinally = commentFinally[0].docs.map(docu => docu.data().list.filter(val => filterList.includes(val.commentUID))).map(list => list[0])
+
+  return [commentFinally, numberOfReports, reasonList];
+}
+
+// Endpoint Actions
 async function ignoreReportedPost(db, postUID) {
-  const reportedPostRef = collection(db, `reportedPosts/${postUID}`)
+  const reportedPostRef = doc(collection(db, 'reportedPosts'), postUID)
   await deleteDoc(reportedPostRef);
+}
+
+async function removeReportedPost(db, postUID) {
+  const reportedPostRef = doc(collection(db, 'reportedPosts'), postUID)
+  await deleteDoc(reportedPostRef);
+
+  const postRef = doc(collection(db, 'posts'), postUID)
+  await deleteDoc(postRef)
+
+  const commentRef = doc(collection(db, 'comments'), postUID)
+  await deleteDoc(commentRef)
+
+  const likesQuery = query(collection(db, 'likes'), where('postUID', '==', postUID))
+  (await getDocs(likesQuery)).forEach(deleteDoc)
+}
+
+async function ignoreReportedComment(db, commentUID) {
+const reportedCommentRef = doc(collection(db, 'reportedComments'), commentUID)
+await deleteDoc(reportedCommentRef);
+}
+
+async function removeReportedComment(db, commentUID) {
+  const reportedCommentRef = doc(collection(db, 'reportedComments'), commentUID)
+  await deleteDoc(reportedCommentRef);
+
+  const commentRef = doc(collection(db, 'comments'), commentUID)
+  await deleteDoc(commentRef)
+}
+
+async function ignoreReportedProfile(db, profileUID) {
+  const reportedProfileRef = doc(collection(db, 'reportedUserProfiles'), profileUID)
+  await deleteDoc(reportedProfileRef);
+}
+
+async function removeReportedProfile(db, profileUID) {
+  const reportedProfileRef = doc(collection(db, 'reportedUserProfiles'), profileUID)
+  await deleteDoc(reportedProfileRef);
+
+  // Wipe profile data
+  const userRef = doc(collection(db, 'users'), profileUID)
+  await updateDoc(userRef, {
+    'first_name': 'User',
+    'last_name': 'Reported',
+    'bio': "Reported!",
+    'description': "Please watch what you write."
+  })
+
+  // TODO: remove profile pic from storage
 }
 
 const hostname = '127.0.0.1';
@@ -71,24 +143,64 @@ app.use(express.static(path.join(__dirname, 'client')));
 
 app.listen(port, () => console.log(`GainzUnited-Web listening on port ${port}.`));
 
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
 
-  getReportedPosts(db).then( (posts) => {
-    console.log(posts)
-    return res.render('home', {
-      data: "Hello world",
-      numberOfReports: posts[1],
-      reasonList: posts[2],
-      reportedPosts: posts[0],
-      reportedComments: posts[0],
-      layout: './layouts/home'})
-  })
-})
+  let posts = await getReportedPosts(db);
+  let comments = await getReportedComments(db);
+
+  console.log(comments[0])
+
+  return res.render('home', {
+    data: "Hello world",
+    numberOfPostReports: posts[1],
+    numberOfCommentReports: comments[1],
+    postReasonList: posts[2],
+    commentReasonList: comments[2],
+    reportedPosts: posts[0],
+    reportedComments: comments[0],
+    layout: './layouts/home'})
+});
 
 app.post('/ReportedPosts/Ignore/:postUID', (req, res) => {
   console.log(`Ignoring post: ${req.params["postUID"]}`)
   ignoreReportedPost(db, req.params["postUID"])
+  res.send(`Ignoring post: ${req.params["postUID"]}`)
 });
+
+app.post('/ReportedPosts/Remove/:postUID', (req, res) => {
+  console.log(`Removing post: ${req.params["postUID"]}`)
+  removeReportedPost(db, req.params["postUID"])
+  res.send(`Removing post: ${req.params["postUID"]}`)
+});
+
+app.post('/ReportedComments/Ignore/:commentUID', (req, res) => {
+  console.log(`Ignoring commentUID: ${req.params["commentUID"]}`)
+  ignoreReportedComment(db, req.params["commentUID"])
+  res.send(`Ignoring commentUID: ${req.params["commentUID"]}`)
+});
+
+app.post('/ReportedComments/Remove/:commentUID', (req, res) => {
+  console.log(`Removing commentUID: ${req.params["commentUID"]}`)
+  removeReportedComment(db, req.params["commentUID"])
+  res.send(`Removing commentUID: ${req.params["commentUID"]}`)
+});
+
+app.post('/ReportedProfiles/Ignore/:profileUID', (req, res) => {
+  console.log(`Ignoring profile: ${req.params["profileUID"]}`)
+  ignoreReportedProfile(db, req.params["profileUID"])
+  res.send(`Ignoring profile: ${req.params["profileUID"]}`)
+});
+
+app.post('/ReportedProfiles/Remove/:profileUID', (req, res) => {
+  console.log(`Removing profile: ${req.params["profileUID"]}`)
+  removeReportedProfile(db, req.params["profileUID"])
+  res.send(`Removing profile: ${req.params["profileUID"]}`)
+});
+
+app.post('/test', (req, res) => {
+  console.log("Test endpoint hit!");
+  return res.send()
+})
 
 // app.get('/', (req, res) => {
 //   "Hello"

@@ -1,15 +1,22 @@
 <table class="table">
   <tr>
-    <th>Comment Identifier</th>
+    <th>Number of Reports</th>
     <th>Description</th>
+    <th>Reason for Report</th>
+    <th>Comment Identifier</th>
     <th>Owner</th>
     <th>Owner Identifier</th>
   </tr>
   <% reportedComments.forEach(function(comment){ %>
-    <td><%= comment.uid %> </td>
-    <td> <%= comment.description %> </td>
-    <td> <%= `${comment.owner_first_name} ${comment.owner_last_name}` %> </td>
-    <td> <%= comment.owner_uid %> </li>
+    <tr id="reportedCommentRow_<%= comment.commentUID %>">
+      <td><%= numberOfCommentReports[comment.commentUID] %></td>
+      <td> <%= comment.content %> </td>
+      <td><%= commentReasonList[comment.commentUID] %> </td>
+      <td><%= comment.commentUID %> </td>
+      <td> <%= comment.user_name %> </td>
+      <td> <%= comment.userUID %> </td>
+      <td><button onClick="ignoreReportedComment('<%= comment.commentUID %>')" type="button" class="btn btn-outline-warning">Ignore</button></td>
+      <td><button onClick="removeReportedComment('<%= comment.commentUID %>')" type="button" class="btn btn-outline-danger">Delete Comment</button></td>
+    </tr> 
   <% }); %>
 </table>
-    
