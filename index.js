@@ -11,12 +11,14 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const TEST_MODE = false;
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+const firebaseTestConfig = {
   apiKey: "AIzaSyCf928TWphVxuTd_R-Mz8MslDdM-TFBaLc",
   authDomain: "gainzunited-testing.firebaseapp.com",
   projectId: "gainzunited-testing",
@@ -26,8 +28,18 @@ const firebaseConfig = {
   measurementId: "G-J3HSKMEFK1"
 };
 
+const firebaseConfig = {
+  apiKey: "AIzaSyDKaX4dg26DTPEkDA-shjwyZO0Ll8SHmsI",
+  authDomain: "gainzunited-stage.firebaseapp.com",
+  projectId: "gainzunited-stage",
+  storageBucket: "gainzunited-stage.appspot.com",
+  messagingSenderId: "361773161795",
+  appId: "1:361773161795:web:f1e74204bf860ebe4be3f6",
+  measurementId: "G-W50Y5876D0"
+}
+
 // Initialize Firebase
-const firebase = initializeApp(firebaseConfig);
+const firebase = initializeApp(TEST_MODE ? firebaseTestConfig : firebaseConfig);
 // const analytics = getAnalytics(app);
 
 const db = getFirestore(firebase);
