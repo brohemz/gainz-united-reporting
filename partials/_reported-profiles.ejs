@@ -1,0 +1,24 @@
+<table class="table">
+  <tr>
+    <th>Number of Reports</th>
+    <th>Bio</th>
+    <th>Description</th>
+    <th>Reason for Report</th>
+    <th>Owner</th>
+    <th>Owner Identifier</th>
+  </tr>
+  <% reportedProfiles.forEach(function(profile){ %>
+    <tr id="reportedProfileRow_<%= profile.uid %>">
+      <td><%= numberOfProfileReports[profile.uid] %></td>
+      <td> <%= profile.description %> </td>
+      <td> <%= profile.bio %> </td>
+      <td><%= profileReasonList[profile.uid] %> </td>
+      <td> <%= `${profile.first_name} ${profile.last_name}` %> </td>
+      <td> <%= profile.uid %> </td>
+      <td><button onClick="ignoreReportedProfile('<%= profile.uid %>')" type="button" class="btn btn-outline-warning">Ignore</button></td>
+      <td><button onClick="removeReportedProfile('<%= profile.uid %>')" type="button" class="btn btn-outline-danger">Write-over Profile</button></td>
+    </tr> 
+  <% }); %>
+</table>
+
+    

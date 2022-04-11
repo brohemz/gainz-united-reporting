@@ -73,9 +73,37 @@ async function getReportedComments(db) {
     .map(commentRef => getDocs(commentRef))
 
   let commentFinally = await Promise.all(commentQuery)
-  commentFinally = commentFinally[0].docs.map(docu => docu.data().list.filter(val => filterList.includes(val.commentUID))).map(list => list[0])
+
+  if(commentFinally[0]) {
+    commentFinally = commentFinally[0].docs.map(docu => docu.data()).map(val => Object.create({
+      ...(val.list.filter(val => filterList.includes(val.commentUID))[0]),
+      postUID: val.uid
+    }));
+  } else {
+    commentFinally = []
+  }
+
+
+
+  console.log(commentFinally)
 
   return [commentFinally, numberOfReports, reasonList];
+}
+
+async function getReportedProfiles(db) {
+  const reportedProfilesCol = collection(db, 'reportedUserProfiles')
+  const snapshot = await getDocs(reportedProfilesCol);
+  let profileList = snapshot.docs.map(document => document.data());
+
+  const numberOfReports = new Set()
+  profileList.forEach(profile => numberOfReports[profile.uid] = profile.user_list.length);
+
+  const reasonList = new Set()
+  profileList.forEach(profile => reasonList[profile.uid] = profile.reason_list[0]);
+
+  let profileDataList = profileList.map(document => (getDoc(doc(db, `users`, document.uid))));
+
+  return [(await Promise.all(profileDataList)).map(document => document.data()), numberOfReports, reasonList];
 }
 
 // Endpoint Actions
@@ -103,12 +131,11 @@ const reportedCommentRef = doc(collection(db, 'reportedComments'), commentUID)
 await deleteDoc(reportedCommentRef);
 }
 
-async function removeReportedComment(db, commentUID) {
+async function removeReportedComment(db, commentUID, postUID) {
   const reportedCommentRef = doc(collection(db, 'reportedComments'), commentUID)
   await deleteDoc(reportedCommentRef);
 
-  const commentRef = doc(collection(db, 'comments'), commentUID)
-  await deleteDoc(commentRef)
+  const originalComment = getDoc(doc(collection(db, 'comments', postUID)))
 }
 
 async function ignoreReportedProfile(db, profileUID) {
@@ -130,6 +157,7 @@ async function removeReportedProfile(db, profileUID) {
   })
 
   // TODO: remove profile pic from storage
+  // FIXME: allow permissions for web
 }
 
 const hostname = '127.0.0.1';
@@ -147,17 +175,21 @@ app.get('/', async (req, res) => {
 
   let posts = await getReportedPosts(db);
   let comments = await getReportedComments(db);
+  let profiles = await getReportedProfiles(db);
 
-  console.log(comments[0])
+  // console.log(profiles[0])
 
   return res.render('home', {
     data: "Hello world",
     numberOfPostReports: posts[1],
     numberOfCommentReports: comments[1],
+    numberOfProfileReports: profiles[1],
     postReasonList: posts[2],
     commentReasonList: comments[2],
+    profileReasonList: profiles[2],
     reportedPosts: posts[0],
     reportedComments: comments[0],
+    reportedProfiles: profiles[0],
     layout: './layouts/home'})
 });
 

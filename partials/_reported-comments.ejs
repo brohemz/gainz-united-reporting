@@ -16,7 +16,7 @@
       <td> <%= comment.user_name %> </td>
       <td> <%= comment.userUID %> </td>
       <td><button onClick="ignoreReportedComment('<%= comment.commentUID %>')" type="button" class="btn btn-outline-warning">Ignore</button></td>
-      <td><button onClick="removeReportedComment('<%= comment.commentUID %>')" type="button" class="btn btn-outline-danger">Delete Comment</button></td>
+      <td><button onClick="removeReportedComment('<%= comment.commentUID %>', '<%= comment.postUID %>')" type="button" class="btn btn-outline-danger">Delete Comment</button></td>
     </tr> 
   <% }); %>
 </table>
