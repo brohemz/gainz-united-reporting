@@ -35,7 +35,7 @@ function ignoreReportedProfile(profileUID) {
 
 function removeReportedProfile(profileUID) {
     console.log(profileUID)
-    fetch(`/ReportedProfiles/Remove/${commentUID}`,
+    fetch(`/ReportedProfiles/Remove/${profileUID}`,
      {method: 'POST'})
     .then(() =>  document.getElementById(`reportedProfileRow_${profileUID}`).remove());
 }

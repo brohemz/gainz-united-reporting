@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, getDoc, doc, deleteDoc, updateDoc, query, where } from "firebase/firestore";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import http from 'http';
 import { fileURLToPath } from "url";
 import express from 'express';
@@ -11,7 +12,7 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const TEST_MODE = false;
+const TEST_MODE = true;
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -43,6 +44,12 @@ const firebase = initializeApp(TEST_MODE ? firebaseTestConfig : firebaseConfig);
 // const analytics = getAnalytics(app);
 
 const db = getFirestore(firebase);
+
+// sign in
+const auth = getAuth(firebase)
+signInWithEmailAndPassword(auth, "admin@gainzunited.com", "admin@gainzunited12345")
+  .then(() => console.log("Admin signed in!"))
+  .catch(console.log)
 
 async function getUsers(db) {
     const userCol = collection(db, 'users');
@@ -155,6 +162,7 @@ async function ignoreReportedProfile(db, profileUID) {
   await deleteDoc(reportedProfileRef);
 }
 
+// doesn't remove - actually writes over profile
 async function removeReportedProfile(db, profileUID) {
   const reportedProfileRef = doc(collection(db, 'reportedUserProfiles'), profileUID)
   await deleteDoc(reportedProfileRef);
