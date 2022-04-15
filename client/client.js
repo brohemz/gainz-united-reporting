@@ -19,9 +19,9 @@ function ignoreReportedComment(commentUID) {
     .then(() =>  document.getElementById(`reportedCommentRow_${commentUID}`).remove());
 }
 
-function removeReportedComment(commentUID) {
-    console.log(commentUID)
-    fetch(`/ReportedComments/Remove/${commentUID}`,
+function removeReportedComment(commentUID, postUID) {
+    console.log(commentUID, postUID)
+    fetch(`/ReportedComments/Remove/${postUID}/${commentUID}`,
      {method: 'POST'})
     .then(() =>  document.getElementById(`reportedCommentRow_${commentUID}`).remove());
 }

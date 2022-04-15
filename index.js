@@ -12,7 +12,7 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const TEST_MODE = true;
+const TEST_MODE = false;
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -84,27 +84,59 @@ async function getReportedComments(db) {
   const reasonList = new Set()
   commentList.forEach(comment => reasonList[comment.uid] = comment.reason_list[0])
 
+  // let filterSet = new Map()
+  // commentList.map(async comment => {
+  //   let doc = getDocs(query(collection(db, 'comments'), where("index_map", "array-contains", comment.uid)))
+  //   filterSet.set(comment.uid, doc);
+  // });
+
+  // filterSet = await Promise.all(filterSet)
+
+  // filterSet.forEach(console.log)
+
+  // let returnArray = []
+
+  // filterSet.forEach((key, val) => {
+  //   let ret = val.map(commentSnapshot => commentSnapshot.docs.map(docu => docu.data())).map(docData => {
+  //     let obj = docData.list.filter(listVal => listVal.commentUID === key)[0]
+  //     return {
+  //       ...obj,
+  //       postUID: docData.uid
+  //     }
+  //   })
+  //   console.log(ret)
+  //   returnArray.push(ret[0])
+  // })
+
+  // return [returnArray, numberOfReports, reasonList];;
+
   let filterList = []
 
   const commentQuery = commentList.map(comment => {
     filterList.push(comment.uid);
+    console.log(comment.uid)
     return query(collection(db, 'comments'), where("index_map", "array-contains", comment.uid)) })
     .map(commentRef => getDocs(commentRef))
 
   let commentFinally = await Promise.all(commentQuery)
 
-  if(commentFinally[0]) {
-    commentFinally = commentFinally[0].docs.map(docu => docu.data()).map(val => Object.create({
-      ...(val.list.filter(val => filterList.includes(val.commentUID))[0]),
-      postUID: val.uid
-    }));
+  var i = 0;
+
+  if(commentFinally) {
+    commentFinally = commentFinally.map(commentSnapshot => commentSnapshot.docs.map(docu => docu.data()).map(docData => {
+
+      let obj = docData.list.filter(listVal => filterList.includes(listVal.commentUID))[i]
+      i++;
+      
+      return { 
+        ...obj,
+        postUID: docData.uid
+      }
+    })).map(val => val[0])
+
   } else {
     commentFinally = []
   }
-
-
-
-  console.log(commentFinally)
 
   return [commentFinally, numberOfReports, reasonList];
 }
@@ -153,8 +185,16 @@ await deleteDoc(reportedCommentRef);
 async function removeReportedComment(db, commentUID, postUID) {
   const reportedCommentRef = doc(collection(db, 'reportedComments'), commentUID)
   await deleteDoc(reportedCommentRef);
-
-  const originalComment = getDoc(doc(collection(db, 'comments', postUID)))
+  console.log(postUID)
+  const commentRef = doc(collection(db, 'comments'), postUID);
+  const originalCommentAggregate = await getDoc(commentRef);
+  const comment = originalCommentAggregate.data();
+  const newCommentAggreggate = {
+    'index_map': comment.index_map.filter(val => val !== commentUID),
+    'list': comment.list.filter(val => val.commentUID !== commentUID),
+    'uid': postUID
+  }
+  await updateDoc(commentRef, newCommentAggreggate);
 }
 
 async function ignoreReportedProfile(db, profileUID) {
@@ -197,7 +237,7 @@ app.get('/', async (req, res) => {
   let comments = await getReportedComments(db);
   let profiles = await getReportedProfiles(db);
 
-  // console.log(profiles[0])
+  console.log("comments", comments[0])
 
   return res.render('home', {
     data: "Hello world",
@@ -231,10 +271,10 @@ app.post('/ReportedComments/Ignore/:commentUID', (req, res) => {
   res.send(`Ignoring commentUID: ${req.params["commentUID"]}`)
 });
 
-app.post('/ReportedComments/Remove/:commentUID', (req, res) => {
+app.post('/ReportedComments/Remove/:postUID/:commentUID', (req, res) => {
   console.log(`Removing commentUID: ${req.params["commentUID"]}`)
-  removeReportedComment(db, req.params["commentUID"])
-  res.send(`Removing commentUID: ${req.params["commentUID"]}`)
+  removeReportedComment(db, req.params["commentUID"], req.params["postUID"])
+  res.send(`Removing commentUID: ${req.params["commentUID"]} for post ${req.params["postUID"]}`)
 });
 
 app.post('/ReportedProfiles/Ignore/:profileUID', (req, res) => {
