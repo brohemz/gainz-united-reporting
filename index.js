@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, getDocs, getDoc, doc, deleteDoc, updateDoc, query, where } from "firebase/firestore";
+import { deleteObject, getStorage, ref } from "firebase/storage";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth"
 import http from 'http';
 import { fileURLToPath } from "url";
@@ -41,6 +42,8 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const firebase = initializeApp(TEST_MODE ? firebaseTestConfig : firebaseConfig);
+
+const storage = getStorage(firebase);
 // const analytics = getAnalytics(app);
 
 const db = getFirestore(firebase);
@@ -83,32 +86,6 @@ async function getReportedComments(db) {
 
   const reasonList = new Set()
   commentList.forEach(comment => reasonList[comment.uid] = comment.reason_list[0])
-
-  // let filterSet = new Map()
-  // commentList.map(async comment => {
-  //   let doc = getDocs(query(collection(db, 'comments'), where("index_map", "array-contains", comment.uid)))
-  //   filterSet.set(comment.uid, doc);
-  // });
-
-  // filterSet = await Promise.all(filterSet)
-
-  // filterSet.forEach(console.log)
-
-  // let returnArray = []
-
-  // filterSet.forEach((key, val) => {
-  //   let ret = val.map(commentSnapshot => commentSnapshot.docs.map(docu => docu.data())).map(docData => {
-  //     let obj = docData.list.filter(listVal => listVal.commentUID === key)[0]
-  //     return {
-  //       ...obj,
-  //       postUID: docData.uid
-  //     }
-  //   })
-  //   console.log(ret)
-  //   returnArray.push(ret[0])
-  // })
-
-  // return [returnArray, numberOfReports, reasonList];;
 
   let filterList = []
 
@@ -208,16 +185,18 @@ async function removeReportedProfile(db, profileUID) {
   await deleteDoc(reportedProfileRef);
 
   // Wipe profile data
-  const userRef = doc(collection(db, 'users'), profileUID)
+  const userRef = doc(collection(db, 'users'), profileUID);
   await updateDoc(userRef, {
     'first_name': 'User',
     'last_name': 'Reported',
     'bio': "Reported!",
     'description': "Please watch what you write."
-  })
+  });
 
   // TODO: remove profile pic from storage
   // FIXME: allow permissions for web
+  const profilePicRef = ref(storage, `/user_profile/${profileUID}.jpg`);
+  await deleteObject(profilePicRef).then(() => console.log("profile pic deleted!"))
 }
 
 const hostname = '127.0.0.1';
